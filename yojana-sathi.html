@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Yojana Sathi — Welfare Scheme Chatbot</title>
+<style>
+  :root{
+    --saffron:#e8740c; --green:#1a7a3a; --navy:#1f3b6e; --bg:#f4f1ea;
+    --bot:#ffffff; --user:#1a7a3a; --chip:#fff7ee; --border:#e3dccd;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{font-family:"Segoe UI","Noto Sans","Noto Sans Devanagari","Noto Sans Telugu",sans-serif; background:var(--bg); height:100vh; display:flex; flex-direction:column;}
+  header{background:linear-gradient(135deg,var(--navy),#2a4f8f); color:#fff; padding:10px 16px; display:flex; align-items:center; gap:12px; box-shadow:0 2px 8px rgba(0,0,0,.18);}
+  header .logo{width:40px; height:40px; border-radius:50%; background:conic-gradient(var(--saffron) 0 33%, #fff 33% 66%, var(--green) 66% 100%); display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0;}
+  header h1{font-size:18px; line-height:1.1;}
+  header .sub{font-size:11.5px; opacity:.85;}
+  .spacer{flex:1;}
+  .langbar{display:flex; gap:4px; background:rgba(255,255,255,.14); border-radius:20px; padding:3px;}
+  .langbar button{border:none; background:transparent; color:#fff; padding:5px 12px; border-radius:16px; cursor:pointer; font-size:13px;}
+  .langbar button.active{background:#fff; color:var(--navy); font-weight:600;}
+  .iconbtn{border:none; background:rgba(255,255,255,.14); color:#fff; width:34px; height:34px; border-radius:50%; cursor:pointer; font-size:16px;}
+  #settings{display:none; background:#fffdf6; border-bottom:1px solid var(--border); padding:12px 16px; font-size:13.5px;}
+  #settings.open{display:block;}
+  #settings .row{display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:6px;}
+  #settings input{flex:1; min-width:220px; padding:8px 10px; border:1px solid var(--border); border-radius:8px; font-size:13px;}
+  #settings select{padding:8px; border:1px solid var(--border); border-radius:8px; font-size:13px;}
+  #settings .save{background:var(--green); color:#fff; border:none; padding:8px 16px; border-radius:8px; cursor:pointer;}
+  #settings .note{color:#7a6f5a; font-size:12px; margin-top:6px;}
+  #modeBadge{font-size:11px; padding:2px 9px; border-radius:10px; background:#ffe9cf; color:#9c5400; margin-left:6px; vertical-align:middle;}
+  #modeBadge.live{background:#dcf5e3; color:#11602c;}
+  #chat{flex:1; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:10px; max-width:860px; width:100%; margin:0 auto;}
+  .msg{max-width:82%; padding:10px 14px; border-radius:14px; font-size:15px; line-height:1.5; white-space:pre-wrap; word-wrap:break-word; box-shadow:0 1px 2px rgba(0,0,0,.08); position:relative;}
+  .msg.bot{background:var(--bot); border:1px solid var(--border); border-top-left-radius:4px; align-self:flex-start;}
+  .msg.user{background:var(--user); color:#fff; border-top-right-radius:4px; align-self:flex-end;}
+  .msg.bot b{color:var(--navy);}
+  .speak{position:absolute; right:-30px; top:6px; border:none; background:none; cursor:pointer; font-size:15px; opacity:.55;}
+  .speak:hover{opacity:1;}
+  .typing{align-self:flex-start; background:var(--bot); border:1px solid var(--border); border-radius:14px; padding:12px 16px; display:flex; gap:5px;}
+  .typing span{width:7px; height:7px; background:#b9ad95; border-radius:50%; animation:blink 1.2s infinite;}
+  .typing span:nth-child(2){animation-delay:.2s;} .typing span:nth-child(3){animation-delay:.4s;}
+  @keyframes blink{0%,80%,100%{opacity:.25} 40%{opacity:1}}
+  #chips{display:flex; flex-wrap:wrap; gap:8px; padding:6px 16px; max-width:860px; width:100%; margin:0 auto;}
+  .chip{background:var(--chip); border:1.5px solid var(--saffron); color:#9c5400; padding:8px 14px; border-radius:20px; cursor:pointer; font-size:14px;}
+  .chip.sel{background:var(--saffron); color:#fff;}
+  .chip.done{border-color:var(--green); color:var(--green); font-weight:600;}
+  #checkbar{display:none; max-width:860px; width:100%; margin:0 auto; padding:6px 16px;}
+  #checkbar.show{display:flex; gap:8px;}
+  #checkbar button{flex:1; border:none; border-radius:10px; padding:11px; font-size:14.5px; font-weight:600; cursor:pointer;}
+  #dlBtn{background:var(--navy); color:#fff;}
+  #shBtn{background:#fff; color:var(--navy); border:1.5px solid var(--navy) !important;}
+  footer{padding:10px 16px 14px; background:transparent;}
+  .inputrow{display:flex; gap:8px; max-width:860px; margin:0 auto;}
+  .inputrow input{flex:1; padding:12px 16px; border:1.5px solid var(--border); border-radius:24px; font-size:15px; outline:none; background:#fff;}
+  .inputrow input:focus{border-color:var(--saffron);}
+  .inputrow button{width:46px; height:46px; border-radius:50%; border:none; cursor:pointer; font-size:18px; flex-shrink:0;}
+  #micBtn{background:#fff; border:1.5px solid var(--border);}
+  #micBtn.rec{background:#e33; color:#fff; animation:pulse 1s infinite;}
+  @keyframes pulse{50%{transform:scale(1.12)}}
+  #sendBtn{background:var(--green); color:#fff;}
+  .disclaim{text-align:center; font-size:10.5px; color:#9a8f78; margin-top:6px;}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">🇮🇳</div>
+  <div><h1 id="tTitle">Yojana Sathi</h1><div class="sub" id="tSub">Your welfare scheme guide</div></div>
+  <span id="modeBadge">DEMO</span>
+  <div class="spacer"></div>
+  <div class="langbar">
+    <button data-lang="en" class="active">EN</button>
+    <button data-lang="hi">हिं</button>
+    <button data-lang="te">తె</button>
+  </div>
+  <button class="iconbtn" id="gear" title="Settings">⚙</button>
+</header>
+
+<div id="settings">
+  <b id="tSet">AI Settings</b>
+  <div class="row">
+    <input type="password" id="apiKey" placeholder="Anthropic API key (sk-ant-…)">
+    <select id="model">
+      <option value="claude-sonnet-4-6">Claude Sonnet 4.6</option>
+      <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5</option>
+    </select>
+    <button class="save" id="saveKey">Save</button>
+  </div>
+  <div class="note" id="tSetNote">With an API key the bot answers freely in your language (LLM mode). Without one, a built-in guided demo flow runs offline.</div>
+</div>
+
+<div id="chat"></div>
+<div id="chips"></div>
+<div id="checkbar">
+  <button id="dlBtn">⬇ Download checklist</button>
+  <button id="shBtn">📤 Share (SMS)</button>
+</div>
+<footer>
+  <div class="inputrow">
+    <button id="micBtn" title="Speak">🎤</button>
+    <input id="box" placeholder="Type your message…" autocomplete="off">
+    <button id="sendBtn" title="Send">➤</button>
+  </div>
+  <div class="disclaim" id="tDisc">Information is indicative. Confirm details at your nearest Common Service Centre (CSC) or Gram Panchayat.</div>
+</footer>
+
+<script>
+// ===================== I18N =====================
+const I18N = {
+  en: {
+    title:"Yojana Sathi", sub:"Your welfare scheme guide",
+    set:"AI Settings",
+    setNote:"With an API key the bot answers freely in your language (LLM mode). Without one, a built-in guided demo flow runs offline.",
+    placeholder:"Type your message…",
+    disc:"Information is indicative. Confirm details at your nearest Common Service Centre (CSC) or Gram Panchayat.",
+    dl:"⬇ Download checklist", sh:"📤 Share (SMS)",
+    welcome:"Namaste! 🙏 I am Yojana Sathi. I help you find government welfare schemes you may be eligible for, and tell you which documents you need.\n\nTap a button below or type your question.",
+    start:"Find my schemes", askDocs:"Documents needed", listAll:"Show all schemes",
+    restart:"Start again", done:"✓ Done",
+    shortHead:"Based on your answers, you may be eligible for these schemes:",
+    noMatch:"I could not find a strong match, but everyone can open a Jan Dhan bank account. Visit your nearest CSC for more help.",
+    checkOffer:"Tap \"Download checklist\" below to save the document list for these schemes. You can also share it by SMS.",
+    checkHead:"DOCUMENT CHECKLIST — Yojana Sathi",
+    docsLabel:"Documents", applyLabel:"Where to apply", whyLabel:"Why you qualify",
+    keySaved:"API key saved. LLM mode is ON — ask me anything about the schemes!",
+    keyCleared:"Key removed. Running in offline demo mode.",
+    err:"Sorry, the AI service could not be reached. Check your API key and internet, or use the guided flow below.",
+    qs:[
+      {q:"First, what is your age group?", o:["Under 18","18–40","41–59","60 or above"]},
+      {q:"What is your gender?", o:["Male","Female","Other"]},
+      {q:"What work do you do?", o:["Farmer","Daily-wage worker","Small business / self-employed","Homemaker","Student","Other"]},
+      {q:"Do you have a BPL/ration card, or is your family income below ₹2.5 lakh per year?", o:["Yes","No","Not sure"]},
+      {q:"Which of these apply to you? (select all, then tap Done)", o:["Own farmland","No pucca house","No LPG connection","Pregnant or new mother","Daughter under 10","No bank account","None of these"], multi:true}
+    ]
+  },
+  hi: {
+    title:"योजना साथी", sub:"आपका सरकारी योजना मार्गदर्शक",
+    set:"AI सेटिंग्स",
+    setNote:"API key देने पर बॉट आपकी भाषा में खुलकर जवाब देता है (LLM मोड)। बिना key के ऑफलाइन गाइडेड डेमो चलता है।",
+    placeholder:"अपना संदेश लिखें…",
+    disc:"जानकारी सांकेतिक है। पुष्टि के लिए नज़दीकी जन सेवा केंद्र (CSC) या ग्राम पंचायत से संपर्क करें।",
+    dl:"⬇ चेकलिस्ट डाउनलोड करें", sh:"📤 SMS से भेजें",
+    welcome:"नमस्ते! 🙏 मैं योजना साथी हूँ। मैं आपको बताता हूँ कि आप किन सरकारी योजनाओं के पात्र हो सकते हैं और कौन से दस्तावेज़ चाहिए।\n\nनीचे बटन दबाएँ या अपना सवाल लिखें।",
+    start:"मेरी योजनाएँ खोजें", askDocs:"ज़रूरी दस्तावेज़", listAll:"सभी योजनाएँ दिखाएँ",
+    restart:"फिर से शुरू करें", done:"✓ हो गया",
+    shortHead:"आपके जवाबों के आधार पर आप इन योजनाओं के पात्र हो सकते हैं:",
+    noMatch:"कोई सटीक योजना नहीं मिली, लेकिन जन धन बैंक खाता हर कोई खोल सकता है। अधिक मदद के लिए नज़दीकी CSC जाएँ।",
+    checkOffer:"इन योजनाओं के दस्तावेज़ों की सूची सहेजने के लिए नीचे \"चेकलिस्ट डाउनलोड करें\" दबाएँ। SMS से भी भेज सकते हैं।",
+    checkHead:"दस्तावेज़ चेकलिस्ट — योजना साथी",
+    docsLabel:"दस्तावेज़", applyLabel:"कहाँ आवेदन करें", whyLabel:"आप क्यों पात्र हैं",
+    keySaved:"API key सहेज ली गई। LLM मोड चालू है — योजनाओं के बारे में कुछ भी पूछें!",
+    keyCleared:"Key हटा दी गई। ऑफलाइन डेमो मोड चालू है।",
+    err:"क्षमा करें, AI सेवा से संपर्क नहीं हो पाया। API key और इंटरनेट जाँचें, या नीचे गाइडेड फ्लो इस्तेमाल करें।",
+    qs:[
+      {q:"पहले बताइए, आपकी उम्र कितनी है?", o:["18 से कम","18–40","41–59","60 या अधिक"]},
+      {q:"आपका लिंग क्या है?", o:["पुरुष","महिला","अन्य"]},
+      {q:"आप क्या काम करते हैं?", o:["किसान","दिहाड़ी मज़दूर","छोटा व्यवसाय / स्वरोज़गार","गृहिणी","विद्यार्थी","अन्य"]},
+      {q:"क्या आपके पास BPL/राशन कार्ड है, या पारिवारिक आय ₹2.5 लाख प्रति वर्ष से कम है?", o:["हाँ","नहीं","पता नहीं"]},
+      {q:"इनमें से क्या आप पर लागू होता है? (सभी चुनें, फिर 'हो गया' दबाएँ)", o:["खेती की ज़मीन है","पक्का घर नहीं","गैस (LPG) कनेक्शन नहीं","गर्भवती या नई माँ","10 साल से छोटी बेटी","बैंक खाता नहीं","इनमें से कोई नहीं"], multi:true}
+    ]
+  },
+  te: {
+    title:"యోజన సాథి", sub:"మీ సంక్షేమ పథకాల మార్గదర్శి",
+    set:"AI సెట్టింగ్‌లు",
+    setNote:"API key ఇస్తే బాట్ మీ భాషలో స్వేచ్ఛగా జవాబిస్తుంది (LLM మోడ్). లేకపోతే ఆఫ్‌లైన్ గైడెడ్ డెమో నడుస్తుంది.",
+    placeholder:"మీ సందేశం టైప్ చేయండి…",
+    disc:"సమాచారం సూచనాత్మకం. నిర్ధారణ కోసం దగ్గరి కామన్ సర్వీస్ సెంటర్ (CSC) లేదా గ్రామ పంచాయతీని సంప్రదించండి.",
+    dl:"⬇ చెక్‌లిస్ట్ డౌన్‌లోడ్", sh:"📤 SMS ద్వారా పంపండి",
+    welcome:"నమస్తే! 🙏 నేను యోజన సాథి. మీరు ఏ ప్రభుత్వ పథకాలకు అర్హులో, ఏ పత్రాలు కావాలో చెబుతాను.\n\nకింది బటన్ నొక్కండి లేదా మీ ప్రశ్న టైప్ చేయండి.",
+    start:"నా పథకాలు కనుగొనండి", askDocs:"కావాల్సిన పత్రాలు", listAll:"అన్ని పథకాలు చూపించు",
+    restart:"మళ్లీ ప్రారంభించు", done:"✓ పూర్తయింది",
+    shortHead:"మీ జవాబుల ఆధారంగా మీరు ఈ పథకాలకు అర్హులు కావచ్చు:",
+    noMatch:"సరిపోయే పథకం దొరకలేదు, కానీ జన్ ధన్ బ్యాంక్ ఖాతా ఎవరైనా తెరవవచ్చు. మరింత సాయానికి దగ్గరి CSCకి వెళ్లండి.",
+    checkOffer:"ఈ పథకాల పత్రాల జాబితాను సేవ్ చేయడానికి కింద \"చెక్‌లిస్ట్ డౌన్‌లోడ్\" నొక్కండి. SMS ద్వారా కూడా పంపవచ్చు.",
+    checkHead:"పత్రాల చెక్‌లిస్ట్ — యోజన సాథి",
+    docsLabel:"పత్రాలు", applyLabel:"ఎక్కడ దరఖాస్తు చేయాలి", whyLabel:"మీరు ఎందుకు అర్హులు",
+    keySaved:"API key సేవ్ అయింది. LLM మోడ్ ఆన్ — పథకాల గురించి ఏదైనా అడగండి!",
+    keyCleared:"Key తొలగించబడింది. ఆఫ్‌లైన్ డెమో మోడ్ నడుస్తోంది.",
+    err:"క్షమించండి, AI సేవ అందుబాటులో లేదు. API key, ఇంటర్నెట్ చూసుకోండి, లేదా కింది గైడెడ్ ఫ్లో వాడండి.",
+    qs:[
+      {q:"మొదట, మీ వయస్సు ఎంత?", o:["18 కంటే తక్కువ","18–40","41–59","60 లేదా ఎక్కువ"]},
+      {q:"మీ లింగం ఏమిటి?", o:["పురుషుడు","స్త్రీ","ఇతర"]},
+      {q:"మీరు ఏ పని చేస్తారు?", o:["రైతు","దినసరి కూలీ","చిన్న వ్యాపారం / స్వయం ఉపాధి","గృహిణి","విద్యార్థి","ఇతర"]},
+      {q:"మీకు BPL/రేషన్ కార్డ్ ఉందా, లేదా కుటుంబ ఆదాయం సంవత్సరానికి ₹2.5 లక్షల కంటే తక్కువా?", o:["అవును","కాదు","తెలియదు"]},
+      {q:"వీటిలో మీకు ఏవి వర్తిస్తాయి? (అన్నీ ఎంచుకుని 'పూర్తయింది' నొక్కండి)", o:["వ్యవసాయ భూమి ఉంది","పక్కా ఇల్లు లేదు","గ్యాస్ (LPG) కనెక్షన్ లేదు","గర్భిణి లేదా కొత్త తల్లి","10 ఏళ్లలోపు కుమార్తె","బ్యాంక్ ఖాతా లేదు","ఏదీ కాదు"], multi:true}
+    ]
+  }
+};
+
+// ===================== SCHEME CATALOGUE (10 high-impact schemes) =====================
+// eligibility flags used by demo scoring: age0=U18, age1=18-40, age2=41-59, age3=60+
+const SCHEMES = [
+  { id:"pmkisan",
+    name:{en:"PM-KISAN", hi:"पीएम-किसान", te:"పీఎం-కిసాన్"},
+    ben:{en:"₹6,000 per year (3 instalments) for landholding farmer families.",
+         hi:"भूमिधारक किसान परिवारों को ₹6,000 प्रति वर्ष (3 किस्तों में)।",
+         te:"భూమి ఉన్న రైతు కుటుంబాలకు సంవత్సరానికి ₹6,000 (3 వాయిదాల్లో)."},
+    docs:{en:["Aadhaar card","Land record (khatauni / pattadar passbook)","Bank passbook"],
+          hi:["आधार कार्ड","ज़मीन के कागज़ात (खतौनी)","बैंक पासबुक"],
+          te:["ఆధార్ కార్డ్","భూమి పత్రాలు (పట్టాదార్ పాస్‌బుక్)","బ్యాంక్ పాస్‌బుక్"]},
+    apply:{en:"pmkisan.gov.in or nearest CSC", hi:"pmkisan.gov.in या नज़दीकी CSC", te:"pmkisan.gov.in లేదా దగ్గరి CSC"},
+    why:{en:"You are a farmer / own farmland", hi:"आप किसान हैं / खेती की ज़मीन है", te:"మీరు రైతు / వ్యవసాయ భూమి ఉంది"},
+    test:a=>a.occ===0||a.flags.includes(0) },
+  { id:"pmjay",
+    name:{en:"Ayushman Bharat (PM-JAY)", hi:"आयुष्मान भारत (PM-JAY)", te:"ఆయుష్మాన్ భారత్ (PM-JAY)"},
+    ben:{en:"Free treatment up to ₹5 lakh per family per year at empanelled hospitals; all citizens 70+ are covered regardless of income.",
+         hi:"पात्र परिवारों को प्रति वर्ष ₹5 लाख तक मुफ्त इलाज; 70+ के सभी नागरिक आय की परवाह किए बिना शामिल।",
+         te:"అర్హ కుటుంబాలకు సంవత్సరానికి ₹5 లక్షల వరకు ఉచిత వైద్యం; 70+ పౌరులందరికీ ఆదాయంతో సంబంధం లేకుండా వర్తిస్తుంది."},
+    docs:{en:["Aadhaar card","Ration card"], hi:["आधार कार्ड","राशन कार्ड"], te:["ఆధార్ కార్డ్","రేషన్ కార్డ్"]},
+    apply:{en:"beneficiary.nha.gov.in or helpline 14555", hi:"beneficiary.nha.gov.in या हेल्पलाइन 14555", te:"beneficiary.nha.gov.in లేదా హెల్ప్‌లైన్ 14555"},
+    why:{en:"Low-income family or senior citizen", hi:"कम आय वाला परिवार या वरिष्ठ नागरिक", te:"తక్కువ ఆదాయ కుటుంబం లేదా వృద్ధులు"},
+    test:a=>a.bpl===0||a.age===3 },
+  { id:"pmayg",
+    name:{en:"PM Awas Yojana – Gramin", hi:"पीएम आवास योजना – ग्रामीण", te:"పీఎం ఆవాస్ యోజన – గ్రామీణ్"},
+    ben:{en:"₹1.2 lakh (plains) / ₹1.3 lakh (hilly areas) grant to build a pucca house.",
+         hi:"पक्का घर बनाने के लिए ₹1.2 लाख (मैदानी) / ₹1.3 लाख (पहाड़ी) सहायता।",
+         te:"పక్కా ఇల్లు కట్టడానికి ₹1.2 లక్షలు (మైదానం) / ₹1.3 లక్షలు (కొండ ప్రాంతం) సాయం."},
+    docs:{en:["Aadhaar card","Bank passbook","MGNREGA job card (if any)"],
+          hi:["आधार कार्ड","बैंक पासबुक","मनरेगा जॉब कार्ड (यदि हो)"],
+          te:["ఆధార్ కార్డ్","బ్యాంక్ పాస్‌బుక్","ఉపాధి హామీ జాబ్ కార్డ్ (ఉంటే)"]},
+    apply:{en:"Gram Panchayat or pmayg.nic.in", hi:"ग्राम पंचायत या pmayg.nic.in", te:"గ్రామ పంచాయతీ లేదా pmayg.nic.in"},
+    why:{en:"No pucca house and low income", hi:"पक्का घर नहीं और कम आय", te:"పక్కా ఇల్లు లేదు, తక్కువ ఆదాయం"},
+    test:a=>a.flags.includes(1)&&a.bpl===0 },
+  { id:"ujjwala",
+    name:{en:"PM Ujjwala Yojana", hi:"पीएम उज्ज्वला योजना", te:"పీఎం ఉజ్వల యోజన"},
+    ben:{en:"Free LPG connection in the woman's name + subsidy on up to 12 refills per year.",
+         hi:"महिला के नाम मुफ्त गैस कनेक्शन + साल में 12 सिलेंडर तक सब्सिडी।",
+         te:"మహిళ పేరుతో ఉచిత గ్యాస్ కనెక్షన్ + ఏటా 12 సిలిండర్ల వరకు సబ్సిడీ."},
+    docs:{en:["Aadhaar card","Ration card","Bank passbook"], hi:["आधार कार्ड","राशन कार्ड","बैंक पासबुक"], te:["ఆధార్ కార్డ్","రేషన్ కార్డ్","బ్యాంక్ పాస్‌బుక్"]},
+    apply:{en:"pmuy.gov.in or any LPG distributor", hi:"pmuy.gov.in या कोई भी गैस एजेंसी", te:"pmuy.gov.in లేదా ఏదైనా గ్యాస్ ఏజెన్సీ"},
+    why:{en:"Woman from a low-income home without LPG", hi:"कम आय वाले घर की महिला, LPG नहीं", te:"LPG లేని తక్కువ ఆదాయ ఇంటి మహిళ"},
+    test:a=>a.gen===1&&a.flags.includes(2)&&a.bpl===0 },
+  { id:"jandhan",
+    name:{en:"PM Jan Dhan Yojana", hi:"पीएम जन धन योजना", te:"పీఎం జన్ ధన్ యోజన"},
+    ben:{en:"Zero-balance bank account with RuPay card and ₹2 lakh accident insurance.",
+         hi:"ज़ीरो बैलेंस बैंक खाता, RuPay कार्ड और ₹2 लाख दुर्घटना बीमा।",
+         te:"జీరో బ్యాలెన్స్ బ్యాంక్ ఖాతా, RuPay కార్డ్, ₹2 లక్షల ప్రమాద బీమా."},
+    docs:{en:["Aadhaar card (or any govt ID)"], hi:["आधार कार्ड (या कोई सरकारी पहचान)"], te:["ఆధార్ కార్డ్ (లేదా ఏదైనా ప్రభుత్వ ID)"]},
+    apply:{en:"Any bank branch or Bank Mitra", hi:"कोई भी बैंक शाखा या बैंक मित्र", te:"ఏదైనా బ్యాంక్ శాఖ లేదా బ్యాంక్ మిత్ర"},
+    why:{en:"You have no bank account", hi:"आपके पास बैंक खाता नहीं है", te:"మీకు బ్యాంక్ ఖాతా లేదు"},
+    test:a=>a.flags.includes(5) },
+  { id:"apy",
+    name:{en:"Atal Pension Yojana", hi:"अटल पेंशन योजना", te:"అటల్ పెన్షన్ యోజన"},
+    ben:{en:"Guaranteed pension of ₹1,000–₹5,000 per month after age 60; join between 18–40.",
+         hi:"60 के बाद ₹1,000–₹5,000 मासिक पेंशन की गारंटी; 18–40 की उम्र में जुड़ें।",
+         te:"60 తర్వాత నెలకు ₹1,000–₹5,000 పెన్షన్ గ్యారంటీ; 18–40 వయసులో చేరాలి."},
+    docs:{en:["Aadhaar card","Bank passbook"], hi:["आधार कार्ड","बैंक पासबुक"], te:["ఆధార్ కార్డ్","బ్యాంక్ పాస్‌బుక్"]},
+    apply:{en:"Your bank branch", hi:"आपकी बैंक शाखा", te:"మీ బ్యాంక్ శాఖ"},
+    why:{en:"You are aged 18–40", hi:"आपकी उम्र 18–40 है", te:"మీ వయస్సు 18–40"},
+    test:a=>a.age===1 },
+  { id:"pmmvy",
+    name:{en:"PM Matru Vandana Yojana", hi:"पीएम मातृ वंदना योजना", te:"పీఎం మాతృ వందన యోజన"},
+    ben:{en:"₹5,000 cash for the first child (₹6,000 if the second child is a girl) for pregnant women and new mothers.",
+         hi:"गर्भवती महिलाओं/नई माताओं को पहले बच्चे पर ₹5,000 (दूसरी बेटी पर ₹6,000)।",
+         te:"గర్భిణులు/కొత్త తల్లులకు మొదటి బిడ్డకు ₹5,000 (రెండో బిడ్డ ఆడపిల్ల అయితే ₹6,000)."},
+    docs:{en:["Aadhaar card","MCP (Mother & Child Protection) card","Bank passbook"],
+          hi:["आधार कार्ड","MCP (मातृ-शिशु सुरक्षा) कार्ड","बैंक पासबुक"],
+          te:["ఆధార్ కార్డ్","MCP (తల్లి-బిడ్డ రక్షణ) కార్డ్","బ్యాంక్ పాస్‌బుక్"]},
+    apply:{en:"Anganwadi centre / ASHA worker", hi:"आंगनवाड़ी केंद्र / आशा कार्यकर्ता", te:"అంగన్‌వాడీ కేంద్రం / ఆశా వర్కర్"},
+    why:{en:"Pregnant woman or new mother", hi:"गर्भवती महिला या नई माँ", te:"గర్భిణి లేదా కొత్త తల్లి"},
+    test:a=>a.gen===1&&a.flags.includes(3) },
+  { id:"nsap",
+    name:{en:"Old Age Pension (NSAP-IGNOAPS)", hi:"वृद्धावस्था पेंशन (NSAP)", te:"వృద్ధాప్య పెన్షన్ (NSAP)"},
+    ben:{en:"Monthly old-age pension for BPL citizens aged 60+ (amount varies by state).",
+         hi:"60+ के BPL नागरिकों को मासिक पेंशन (राशि राज्य अनुसार अलग)।",
+         te:"60+ BPL పౌరులకు నెలవారీ పెన్షన్ (మొత్తం రాష్ట్రాన్ని బట్టి మారుతుంది)."},
+    docs:{en:["Aadhaar card","Age proof","BPL card","Bank passbook"],
+          hi:["आधार कार्ड","उम्र का प्रमाण","BPL कार्ड","बैंक पासबुक"],
+          te:["ఆధార్ కార్డ్","వయస్సు ధృవీకరణ","BPL కార్డ్","బ్యాంక్ పాస్‌బుక్"]},
+    apply:{en:"Gram Panchayat / block office", hi:"ग्राम पंचायत / ब्लॉक कार्यालय", te:"గ్రామ పంచాయతీ / మండల కార్యాలయం"},
+    why:{en:"Aged 60+ with low income", hi:"60+ उम्र और कम आय", te:"60+ వయస్సు, తక్కువ ఆదాయం"},
+    test:a=>a.age===3&&a.bpl===0 },
+  { id:"mudra",
+    name:{en:"PM Mudra Yojana", hi:"पीएम मुद्रा योजना", te:"పీఎం ముద్రా యోజన"},
+    ben:{en:"Collateral-free business loans up to ₹10 lakh (₹20 lakh under Tarun Plus).",
+         hi:"बिना गारंटी ₹10 लाख तक व्यवसाय ऋण (तरुण प्लस में ₹20 लाख)।",
+         te:"హామీ లేకుండా ₹10 లక్షల వరకు వ్యాపార రుణం (తరుణ్ ప్లస్‌లో ₹20 లక్షలు)."},
+    docs:{en:["Aadhaar card","Business plan / proof","Bank statement"],
+          hi:["आधार कार्ड","व्यवसाय योजना / प्रमाण","बैंक स्टेटमेंट"],
+          te:["ఆధార్ కార్డ్","వ్యాపార ప్రణాళిక / రుజువు","బ్యాంక్ స్టేట్‌మెంట్"]},
+    apply:{en:"Any bank or mudra.org.in", hi:"कोई भी बैंक या mudra.org.in", te:"ఏదైనా బ్యాంక్ లేదా mudra.org.in"},
+    why:{en:"You run or want to start a small business", hi:"आप छोटा व्यवसाय चलाते/शुरू करना चाहते हैं", te:"మీరు చిన్న వ్యాపారం నడుపుతున్నారు/ప్రారంభించాలనుకుంటున్నారు"},
+    test:a=>a.occ===2 },
+  { id:"ssy",
+    name:{en:"Sukanya Samriddhi Yojana", hi:"सुकन्या समृद्धि योजना", te:"సుకన్యా సమృద్ధి యోజన"},
+    ben:{en:"High-interest (8.2%) tax-free savings account for a girl child under 10.",
+         hi:"10 साल से छोटी बेटी के लिए 8.2% ब्याज वाला कर-मुक्त बचत खाता।",
+         te:"10 ఏళ్లలోపు కుమార్తె కోసం 8.2% వడ్డీ, పన్ను రహిత పొదుపు ఖాతా."},
+    docs:{en:["Girl's birth certificate","Guardian's Aadhaar card"],
+          hi:["बेटी का जन्म प्रमाणपत्र","अभिभावक का आधार कार्ड"],
+          te:["అమ్మాయి జనన ధృవీకరణ పత్రం","సంరక్షకుని ఆధార్ కార్డ్"]},
+    apply:{en:"Post office or bank", hi:"डाकघर या बैंक", te:"పోస్ట్ ఆఫీస్ లేదా బ్యాంక్"},
+    why:{en:"You have a daughter under 10", hi:"आपकी 10 साल से छोटी बेटी है", te:"మీకు 10 ఏళ్లలోపు కుమార్తె ఉంది"},
+    test:a=>a.flags.includes(4) }
+];
+
+// ===================== STATE =====================
+let lang = "en";
+let apiKey = "", model = "claude-sonnet-4-6";
+try { apiKey = localStorage.getItem("ys_key") || ""; model = localStorage.getItem("ys_model") || model; lang = localStorage.getItem("ys_lang") || "en"; } catch(e){}
+let llmHistory = [];           // {role, content} for LLM mode
+let demo = null;               // demo flow state: {step, ans:{age,gen,occ,bpl,flags[]}, multiSel:[]}
+let lastChecklist = "";        // latest checklist text for download/share
+const $ = id => document.getElementById(id);
+const chat = $("chat"), chips = $("chips");
+
+// ===================== UI HELPERS =====================
+function t(){ return I18N[lang]; }
+function addMsg(text, who){
+  const d = document.createElement("div");
+  d.className = "msg " + who;
+  // minimal markdown: **bold**
+  d.innerHTML = escapeHtml(text).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>");
+  if (who === "bot" && "speechSynthesis" in window){
+    const s = document.createElement("button");
+    s.className = "speak"; s.textContent = "🔊"; s.title = "Listen";
+    s.onclick = () => speak(text);
+    d.appendChild(s);
+  }
+  chat.appendChild(d);
+  chat.scrollTop = chat.scrollHeight;
+}
+function escapeHtml(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+let typingEl = null;
+function showTyping(on){
+  if (on && !typingEl){
+    typingEl = document.createElement("div");
+    typingEl.className = "typing";
+    typingEl.innerHTML = "<span></span><span></span><span></span>";
+    chat.appendChild(typingEl); chat.scrollTop = chat.scrollHeight;
+  } else if (!on && typingEl){ typingEl.remove(); typingEl = null; }
+}
+function setChips(list){
+  chips.innerHTML = "";
+  list.forEach(c => {
+    const b = document.createElement("button");
+    b.className = "chip" + (c.cls ? " " + c.cls : "");
+    b.textContent = c.label;
+    b.onclick = () => c.fn(b);
+    chips.appendChild(b);
+  });
+}
+function speak(text){
+  try {
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text.replace(/\*\*/g,""));
+    u.lang = {en:"en-IN", hi:"hi-IN", te:"te-IN"}[lang];
+    speechSynthesis.speak(u);
+  } catch(e){}
+}
+
+// ===================== LANGUAGE =====================
+function applyLang(){
+  const s = t();
+  $("tTitle").textContent = s.title; $("tSub").textContent = s.sub;
+  $("tSet").textContent = s.set; $("tSetNote").textContent = s.setNote;
+  $("box").placeholder = s.placeholder; $("tDisc").textContent = s.disc;
+  $("dlBtn").textContent = s.dl; $("shBtn").textContent = s.sh;
+  document.querySelectorAll(".langbar button").forEach(b =>
+    b.classList.toggle("active", b.dataset.lang === lang));
+}
+document.querySelectorAll(".langbar button").forEach(b => b.onclick = () => {
+  lang = b.dataset.lang;
+  try { localStorage.setItem("ys_lang", lang); } catch(e){}
+  applyLang();
+  restart();
+});
+
+// ===================== HOME / RESTART =====================
+function homeChips(){
+  setChips([
+    {label: t().start, fn: () => { addMsg(t().start, "user"); startDemoOrLLM("eligibility"); }},
+    {label: t().askDocs, fn: () => { addMsg(t().askDocs, "user"); startDemoOrLLM("docs"); }},
+    {label: t().listAll, fn: () => { addMsg(t().listAll, "user"); listAll(); }}
+  ]);
+}
+function restart(){
+  chat.innerHTML = ""; chips.innerHTML = "";
+  $("checkbar").classList.remove("show");
+  llmHistory = []; demo = null; lastChecklist = "";
+  addMsg(t().welcome, "bot");
+  homeChips();
+}
+function listAll(){
+  let out = "";
+  SCHEMES.forEach((s,i) => { out += "**" + (i+1) + ". " + s.name[lang] + "**\n" + s.ben[lang] + "\n\n"; });
+  addMsg(out.trim(), "bot");
+  homeChips();
+}
+
+// ===================== MODE DISPATCH =====================
+function startDemoOrLLM(intent){
+  if (apiKey){
+    sendToLLM(intent === "eligibility"
+      ? {en:"Help me find which schemes I am eligible for.", hi:"मुझे बताइए मैं किन योजनाओं का पात्र हूँ।", te:"నేను ఏ పథకాలకు అర్హుడినో చెప్పండి."}[lang]
+      : {en:"Which documents do I need for these schemes?", hi:"इन योजनाओं के लिए कौन से दस्तावेज़ चाहिए?", te:"ఈ పథకాలకు ఏ పత్రాలు కావాలి?"}[lang]);
+  } else if (intent === "eligibility"){
+    demo = { step:0, ans:{age:0,gen:0,occ:0,bpl:0,flags:[]}, multiSel:[] };
+    askDemoQ();
+  } else {
+    // docs without eligibility run: show generic core documents
+    addMsg({en:"For most schemes you need: **Aadhaar card, bank passbook, ration card**. Run \"Find my schemes\" to get an exact personalised checklist.",
+            hi:"अधिकतर योजनाओं के लिए चाहिए: **आधार कार्ड, बैंक पासबुक, राशन कार्ड**। सटीक व्यक्तिगत चेकलिस्ट के लिए \"मेरी योजनाएँ खोजें\" चलाएँ।",
+            te:"చాలా పథకాలకు కావాల్సినవి: **ఆధార్ కార్డ్, బ్యాంక్ పాస్‌బుక్, రేషన్ కార్డ్**. ఖచ్చితమైన వ్యక్తిగత చెక్‌లిస్ట్ కోసం \"నా పథకాలు కనుగొనండి\" నడపండి."}[lang], "bot");
+    homeChips();
+  }
+}
+
+// ===================== DEMO (RULE-BASED) FLOW =====================
+function askDemoQ(){
+  const q = t().qs[demo.step];
+  addMsg(q.q, "bot");
+  if (q.multi){
+    demo.multiSel = [];
+    const cs = q.o.map((o,i) => ({label:o, fn:(btn) => {
+      if (i === q.o.length-1){ demo.multiSel = []; document.querySelectorAll("#chips .chip").forEach(c=>c.classList.remove("sel")); btn.classList.add("sel"); return; }
+      btn.classList.toggle("sel");
+      const idx = demo.multiSel.indexOf(i);
+      idx >= 0 ? demo.multiSel.splice(idx,1) : demo.multiSel.push(i);
+    }}));
+    cs.push({label:t().done, cls:"done", fn:() => {
+      const sel = demo.multiSel.slice();
+      const labels = sel.length ? sel.map(i=>q.o[i]).join(", ") : q.o[q.o.length-1];
+      addMsg(labels, "user");
+      demo.ans.flags = sel;
+      finishDemo();
+    }});
+    setChips(cs);
+  } else {
+    setChips(q.o.map((o,i) => ({label:o, fn:() => {
+      addMsg(o, "user");
+      const key = ["age","gen","occ","bpl"][demo.step];
+      demo.ans[key] = i;
+      demo.step++;
+      askDemoQ();
+    }})));
+  }
+}
+function finishDemo(){
+  const a = demo.ans;
+  const matched = SCHEMES.filter(s => { try { return s.test(a); } catch(e){ return false; } });
+  let out;
+  if (matched.length){
+    out = t().shortHead + "\n";
+    matched.forEach((s,i) => {
+      out += "\n**" + (i+1) + ". " + s.name[lang] + "**\n" +
+             s.ben[lang] + "\n" +
+             "✔ " + t().whyLabel + ": " + s.why[lang] + "\n" +
+             "📍 " + t().applyLabel + ": " + s.apply[lang] + "\n";
+    });
+    out += "\n" + t().checkOffer;
+    lastChecklist = buildChecklist(matched);
+    $("checkbar").classList.add("show");
+  } else {
+    out = t().noMatch;
+  }
+  addMsg(out, "bot");
+  demo = null;
+  setChips([{label:t().restart, fn:restart}]);
+}
+function buildChecklist(matched){
+  let txt = t().checkHead + "\n" + "=".repeat(34) + "\n";
+  matched.forEach((s,i) => {
+    txt += "\n" + (i+1) + ") " + s.name[lang] + "\n";
+    txt += "   " + t().docsLabel + ":\n";
+    s.docs[lang].forEach(d => txt += "   [ ] " + d + "\n");
+    txt += "   " + t().applyLabel + ": " + s.apply[lang] + "\n";
+  });
+  txt += "\n" + t().disc + "\n";
+  return txt;
+}
+
+// ===================== LLM MODE (Claude API) =====================
+function systemPrompt(){
+  const langName = {en:"English", hi:"Hindi (Devanagari)", te:"Telugu"}[lang];
+  const cat = SCHEMES.map(s => ({
+    name: s.name.en, benefit: s.ben.en, documents: s.docs.en, apply: s.apply.en
+  }));
+  return "You are Yojana Sathi, a friendly assistant helping low-literacy users in India discover government welfare schemes.\n" +
+  "RULES:\n" +
+  "1. Reply ONLY in " + langName + ". Use very simple words and short sentences. Keep replies under 120 words unless listing schemes.\n" +
+  "2. You may ONLY discuss the schemes in the CATALOGUE below. For anything else, politely say you only know these schemes and suggest visiting the nearest Common Service Centre (CSC).\n" +
+  "3. Eligibility flow: when the user wants to find their schemes, ask 4-6 SHORT questions ONE AT A TIME (age group, gender, occupation, BPL/ration card or income, household details like farmland / pucca house / LPG / pregnancy / daughter under 10 / bank account). After EVERY question, append a final line exactly in this format: [OPTIONS]option1|option2|option3[/OPTIONS] (options in " + langName + ").\n" +
+  "4. After the questions, give a personalised shortlist: scheme name, benefit, why they qualify, where to apply. Then offer a document checklist.\n" +
+  "5. Whenever you provide the document checklist, wrap ONLY the plain-text checklist between [CHECKLIST] and [/CHECKLIST] markers. Keep it short and SMS-friendly: scheme name, documents with [ ] boxes, where to apply.\n" +
+  "6. Never invent benefit amounts or rules not in the catalogue. Remind users to confirm at their CSC or Gram Panchayat.\n\n" +
+  "CATALOGUE:\n" + JSON.stringify(cat, null, 1);
+}
+async function sendToLLM(userText){
+  llmHistory.push({role:"user", content:userText});
+  setChips([]); showTyping(true);
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method:"POST",
+      headers:{
+        "content-type":"application/json",
+        "x-api-key":apiKey,
+        "anthropic-version":"2023-06-01",
+        "anthropic-dangerous-direct-browser-access":"true"
+      },
+      body:JSON.stringify({ model, max_tokens:1200, system:systemPrompt(), messages:llmHistory })
+    });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const data = await res.json();
+    let text = (data.content || []).filter(b=>b.type==="text").map(b=>b.text).join("");
+    llmHistory.push({role:"assistant", content:text});
+
+    // extract checklist
+    const cm = text.match(/\[CHECKLIST\]([\s\S]*?)\[\/CHECKLIST\]/);
+    if (cm){
+      lastChecklist = cm[1].trim() + "\n\n" + t().disc;
+      $("checkbar").classList.add("show");
+      text = text.replace(/\[CHECKLIST\]|\[\/CHECKLIST\]/g, "").trim();
+    }
+    // extract quick-reply options
+    let opts = null;
+    const om = text.match(/\[OPTIONS\]([\s\S]*?)\[\/OPTIONS\]/);
+    if (om){ opts = om[1].split("|").map(s=>s.trim()).filter(Boolean); text = text.replace(om[0], "").trim(); }
+
+    showTyping(false);
+    addMsg(text, "bot");
+    if (opts && opts.length) setChips(opts.map(o => ({label:o, fn:() => { addMsg(o,"user"); sendToLLM(o); }})));
+    else setChips([{label:t().restart, fn:restart}]);
+  } catch(err){
+    showTyping(false);
+    addMsg(t().err, "bot");
+    homeChips();
+  }
+}
+
+// ===================== INPUT =====================
+function handleSend(){
+  const v = $("box").value.trim();
+  if (!v) return;
+  $("box").value = "";
+  addMsg(v, "user");
+  if (apiKey) sendToLLM(v);
+  else if (demo) addMsg({en:"Please tap one of the buttons above to answer. 🙏", hi:"कृपया जवाब देने के लिए ऊपर का कोई बटन दबाएँ। 🙏", te:"దయచేసి సమాధానానికి పైన ఉన్న బటన్ నొక్కండి. 🙏"}[lang], "bot");
+  else { // simple offline intent match
+    const low = v.toLowerCase();
+    if (/(eligib|scheme|yojana|योजना|पात्र|పథక|అర్హ)/i.test(low)) startDemoOrLLM("eligibility");
+    else if (/(doc|दस्तावेज|कागज|పత్రా)/i.test(low)) startDemoOrLLM("docs");
+    else { addMsg({en:"In offline demo mode I can run the guided flow. Tap a button below, or add an API key in ⚙ settings for free chat.",
+                   hi:"ऑफलाइन डेमो मोड में मैं गाइडेड फ्लो चला सकता हूँ। नीचे बटन दबाएँ, या खुलकर बात करने के लिए ⚙ सेटिंग्स में API key जोड़ें।",
+                   te:"ఆఫ్‌లైన్ డెమో మోడ్‌లో గైడెడ్ ఫ్లో నడపగలను. కింది బటన్ నొక్కండి, లేదా స్వేచ్ఛా చాట్ కోసం ⚙ సెట్టింగ్‌లలో API key జోడించండి."}[lang], "bot"); homeChips(); }
+  }
+}
+$("sendBtn").onclick = handleSend;
+$("box").addEventListener("keydown", e => { if (e.key === "Enter") handleSend(); });
+
+// ===================== VOICE INPUT =====================
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+if (SR){
+  const rec = new SR();
+  rec.interimResults = false;
+  let recording = false;
+  $("micBtn").onclick = () => {
+    if (recording){ rec.stop(); return; }
+    rec.lang = {en:"en-IN", hi:"hi-IN", te:"te-IN"}[lang];
+    rec.start(); recording = true; $("micBtn").classList.add("rec");
+  };
+  rec.onresult = e => { $("box").value = e.results[0][0].transcript; handleSend(); };
+  rec.onend = () => { recording = false; $("micBtn").classList.remove("rec"); };
+  rec.onerror = () => { recording = false; $("micBtn").classList.remove("rec"); };
+} else { $("micBtn").style.display = "none"; }
+
+// ===================== CHECKLIST DOWNLOAD / SHARE =====================
+$("dlBtn").onclick = () => {
+  if (!lastChecklist) return;
+  const blob = new Blob([lastChecklist], {type:"text/plain;charset=utf-8"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "yojana-checklist-" + lang + ".txt";
+  a.click(); URL.revokeObjectURL(a.href);
+};
+$("shBtn").onclick = () => {
+  if (!lastChecklist) return;
+  if (navigator.share) navigator.share({text:lastChecklist}).catch(()=>{});
+  else location.href = "sms:?body=" + encodeURIComponent(lastChecklist.slice(0, 900));
+};
+
+// ===================== SETTINGS =====================
+function updateBadge(){
+  const b = $("modeBadge");
+  if (apiKey){ b.textContent = "LLM ✓"; b.classList.add("live"); }
+  else { b.textContent = "DEMO"; b.classList.remove("live"); }
+}
+$("gear").onclick = () => $("settings").classList.toggle("open");
+$("saveKey").onclick = () => {
+  apiKey = $("apiKey").value.trim();
+  model = $("model").value;
+  try { localStorage.setItem("ys_key", apiKey); localStorage.setItem("ys_model", model); } catch(e){}
+  $("settings").classList.remove("open");
+  updateBadge();
+  addMsg(apiKey ? t().keySaved : t().keyCleared, "bot");
+};
+
+// ===================== INIT =====================
+$("apiKey").value = apiKey; $("model").value = model;
+updateBadge(); applyLang(); restart();
+
+</script>
+</body>
+</html>
